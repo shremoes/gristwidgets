@@ -5,32 +5,14 @@
   <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
 </head>
 <body>
+  <pre id="out">waiting…</pre>
+
 <script>
   grist.ready();
 
-  grist.onRecords(async (records) => {
-    if (!records) return;
-
-    for (const rec of records) {
-      if (
-        rec.Paid === true &&
-        rec.LedgerPosted !== true
-      ) {
-        await grist.applyUserActions([
-          ['AddRecord', 'Ledger', null, {
-            Date: rec.Date,
-            Type: 'Income',
-            Source: 'Invoice',
-            Ref_ID: rec.id,
-            Amount: rec.Total,
-            Notes: 'Invoice payment'
-          }],
-          ['UpdateRecord', 'Invoices', rec.id, {
-            LedgerPosted: true
-          }]
-        ]);
-      }
-    }
+  grist.onRecords((records) => {
+    document.getElementById('out').textContent =
+      JSON.stringify(records, null, 2);
   });
 </script>
 </body>
