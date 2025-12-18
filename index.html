@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+</head>
+<body>
+<script>
+  grist.ready();
+
+  let lastPosted = false;
+
+  grist.onRecord(async (rec) => {
+    if (!rec) return;
+
+    // Only fire once when Paid flips true
+    if (rec.Paid === true && lastPosted === false) {
+      lastPosted = true;
+
+      await grist.applyUserActions([
+        ['AddRecord', 'Ledger', null, {
+          Date: rec.Date,
+          Type: 'Income',
+          Source: 'Invoice',
+          Ref_ID: rec.id,
+          Amount: rec.Total,
+          Notes: 'Invoice payment'
+        }]
+      ]);
+    }
+
+    if (rec.Paid === false) {
+      lastPosted = false;
+    }
+  });
+</script>
+</body>
+</html>
