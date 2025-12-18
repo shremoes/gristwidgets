@@ -8,17 +8,14 @@
 <script>
   grist.ready();
 
-  let lastPaidById = {};
-
   grist.onRecords(async (records) => {
-    if (!records || records.length === 0) return;
+    if (!records) return;
 
     for (const rec of records) {
-      const prev = lastPaidById[rec.id] ?? false;
-      const curr = rec.Paid === true;
-
-      // Fire ONLY on false -> true transition
-      if (!prev && curr) {
+      if (
+        rec.Paid === true &&
+        rec.LedgerPosted !== true
+      ) {
         await grist.applyUserActions([
           ['AddRecord', 'Ledger', null, {
             Date: rec.Date,
@@ -27,11 +24,12 @@
             Ref_ID: rec.id,
             Amount: rec.Total,
             Notes: 'Invoice payment'
+          }],
+          ['UpdateRecord', 'Invoices', rec.id, {
+            LedgerPosted: true
           }]
         ]);
       }
-
-      lastPaidById[rec.id] = curr;
     }
   });
 </script>
