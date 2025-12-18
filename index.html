@@ -8,29 +8,30 @@
 <script>
   grist.ready();
 
-  let lastPosted = false;
+  let lastPaidById = {};
 
-  grist.onRecord(async (rec) => {
-    if (!rec) return;
+  grist.onRecords(async (records) => {
+    if (!records || records.length === 0) return;
 
-    // Only fire once when Paid flips true
-    if (rec.Paid === true && lastPosted === false) {
-      lastPosted = true;
+    for (const rec of records) {
+      const prev = lastPaidById[rec.id] ?? false;
+      const curr = rec.Paid === true;
 
-      await grist.applyUserActions([
-        ['AddRecord', 'Ledger', null, {
-          Date: rec.Date,
-          Type: 'Income',
-          Source: 'Invoice',
-          Ref_ID: rec.id,
-          Amount: rec.Total,
-          Notes: 'Invoice payment'
-        }]
-      ]);
-    }
+      // Fire ONLY on false -> true transition
+      if (!prev && curr) {
+        await grist.applyUserActions([
+          ['AddRecord', 'Ledger', null, {
+            Date: rec.Date,
+            Type: 'Income',
+            Source: 'Invoice',
+            Ref_ID: rec.id,
+            Amount: rec.Total,
+            Notes: 'Invoice payment'
+          }]
+        ]);
+      }
 
-    if (rec.Paid === false) {
-      lastPosted = false;
+      lastPaidById[rec.id] = curr;
     }
   });
 </script>
